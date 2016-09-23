@@ -51,16 +51,29 @@ namespace PoGo.NecroBot.Logic.Common
             _retryCount = 0;
         }
 
-        public async Task<ApiOperation> HandleApiFailure(RequestEnvelope request, ResponseEnvelope response)
+        public async Task<ApiOperation> HandleApiFailure(RequestEnvelope request, ResponseEnvelope response, Exception exception)
         {
             if (_retryCount == 11)
+            {
+                if (exception != null)
+                    throw exception;
+
                 return ApiOperation.Abort;
+            }
 
             await Task.Delay(500);
             _retryCount++;
 
             if (_retryCount%5 != 0)
                 return ApiOperation.Retry;
+
+            if (exception != null)
+            {
+                if (exception is AccessTokenExpiredException)
+                {
+                    await Task.Delay(2000);
+                }
+            }
 
             try
             {
@@ -81,28 +94,7 @@ namespace PoGo.NecroBot.Logic.Common
 
             return ApiOperation.Retry;
         }
-
-        public async Task<ApiOperation> HandleApiFailure()
-        {
-            if (_retryCount == 11)
-                return ApiOperation.Abort;
-
-            await Task.Delay(500);
-            _retryCount++;
-
-            if (_retryCount%5 == 0)
-            {
-                DoLogin();
-            }
-
-            return ApiOperation.Retry;
-        }
-
-        public void HandleApiSuccess()
-        {
-            _retryCount = 0;
-        }
-
+        
         private async void DoLogin()
         {
             try
