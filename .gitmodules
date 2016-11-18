@@ -2,3 +2,6 @@
 	path = PoGo.RocketAPI
 	url = https://github.com/Necrobot-Private/PokemonGo.RocketAPI.git
 	branch = master
+[submodule "PokemonGo-Bot"]
+	path = PokemonGo-Bot
+	url = https://github.com/Necrobot-Private/PokemonGo-Bot.git
