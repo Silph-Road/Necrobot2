@@ -1,4 +1,4 @@
 [submodule "FeroxRev"]
-	path = FeroxRev
+	path = PoGo.RocketAPI
 	url = https://github.com/Necrobot-Private/PokemonGo.RocketAPI.git
 	branch = master
