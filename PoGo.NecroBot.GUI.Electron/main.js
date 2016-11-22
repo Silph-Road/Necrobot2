@@ -3,6 +3,7 @@ const electron = require('electron')
 const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
+const protocol = electron.protocol
 
 const path = require('path')
 const url = require('url')
@@ -39,6 +40,17 @@ function createWindow () {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null
+  })
+  
+  protocol.registerFileProtocol('unity', (request, callback) => {
+    const captchaToken = request.url.substr(6)
+	// TODO Send back to CLI.
+	console.log('Captcha token:');
+	console.log(captchaToken);
+  }, (error) => {
+    if (error) {
+	  console.error('Failed to register unity protocol')
+	}
   })
 }
 
