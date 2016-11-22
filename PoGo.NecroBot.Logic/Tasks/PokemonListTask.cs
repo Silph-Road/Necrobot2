@@ -17,15 +17,15 @@ namespace PoGo.NecroBot.Logic.Tasks
         public static async Task Execute(ISession session)
         {
             // Refresh inventory so that the player stats are fresh
-            await session.Inventory.RefreshCachedInventory();
+            // await session.Inventory.RefreshCachedInventory();
 
             var myPokemonSettings = await session.Inventory.GetPokemonSettings();
             var pokemonSettings = myPokemonSettings.ToList();
 
-            var myPokemonFamilies = await session.Inventory.GetPokemonFamilies();
+            var myPokemonFamilies = session.Inventory.GetPokemonFamilies();
             var pokemonFamilies = myPokemonFamilies.ToArray();
 
-            var allPokemonInBag = await session.Inventory.GetHighestsCp(1000);
+            var allPokemonInBag = session.Inventory.GetHighestsCp(1000);
 
             var pkmWithIv = allPokemonInBag.Select(p => {
                 var settings = pokemonSettings.Single(x => x.PokemonId == p.PokemonId);

@@ -23,7 +23,7 @@ namespace PoGo.NecroBot.Logic.Tasks
             if (session.LogicSettings.AutoFavoritePokemon)
                 await FavoritePokemonTask.Execute(session, cancellationToken);
 
-            await session.Inventory.RefreshCachedInventory();
+            // await session.Inventory.RefreshCachedInventory();
             var duplicatePokemons =
                 await
                     session.Inventory.GetDuplicatePokemonToTransfer(
@@ -35,18 +35,18 @@ namespace PoGo.NecroBot.Logic.Tasks
             var orderedPokemon = duplicatePokemons.OrderBy( poke => poke.Cp );
 
             var pokemonSettings = await session.Inventory.GetPokemonSettings();
-            var pokemonFamilies = await session.Inventory.GetPokemonFamilies();
+            var pokemonFamilies = session.Inventory.GetPokemonFamilies();
 
             foreach (var duplicatePokemon in orderedPokemon)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await session.Client.Inventory.TransferPokemon(duplicatePokemon.Id);
-                await session.Inventory.DeletePokemonFromInvById(duplicatePokemon.Id);
+                session.Inventory.DeletePokemonFromInvById(duplicatePokemon.Id);
 
                 var bestPokemonOfType = (session.LogicSettings.PrioritizeIvOverCp
-                    ? await session.Inventory.GetHighestPokemonOfTypeByIv(duplicatePokemon)
-                    : await session.Inventory.GetHighestPokemonOfTypeByCp(duplicatePokemon)) ?? duplicatePokemon;
+                    ? session.Inventory.GetHighestPokemonOfTypeByIv(duplicatePokemon)
+                    : session.Inventory.GetHighestPokemonOfTypeByCp(duplicatePokemon)) ?? duplicatePokemon;
 
                 var setting = pokemonSettings.SingleOrDefault(q => q.PokemonId == duplicatePokemon.PokemonId);
                 var family = pokemonFamilies.FirstOrDefault(q => q.FamilyId == setting.FamilyId);

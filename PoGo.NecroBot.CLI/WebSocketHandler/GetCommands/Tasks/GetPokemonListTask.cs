@@ -21,7 +21,7 @@ namespace PoGo.NecroBot.CLI.WebSocketHandler.GetCommands.Tasks
             {
                 if (!await blocker.WaitToRun()) return;
 
-                var allPokemonInBag = await session.Inventory.GetHighestsCp(1000);
+                var allPokemonInBag = session.Inventory.GetHighestsCp(1000);
                 var list = new List<PokemonListWeb>();
                 allPokemonInBag.ToList().ForEach(o => list.Add(new PokemonListWeb(o)));
                 webSocketSession.Send(EncodingHelper.Serialize(new PokemonListResponce(list, requestID)));

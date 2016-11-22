@@ -25,8 +25,8 @@ namespace PoGo.NecroBot.Logic.Tasks
             if (session.LogicSettings.AutoFavoritePokemon)
                 await FavoritePokemonTask.Execute(session, cancellationToken);
 
-            await session.Inventory.RefreshCachedInventory();
-            var pokemons = await session.Inventory.GetPokemons();
+            // await session.Inventory.RefreshCachedInventory();
+            var pokemons = session.Inventory.GetPokemons();
             var pokemonDatas = pokemons as IList<PokemonData> ?? pokemons.ToList();
             var pokemonsFiltered =
                 pokemonDatas.Where(pokemon => !session.LogicSettings.PokemonsNotToTransfer.Contains(pokemon.PokemonId))
@@ -50,14 +50,14 @@ namespace PoGo.NecroBot.Logic.Tasks
                     continue;
 
                 await session.Client.Inventory.TransferPokemon(pokemon.Id);
-                await session.Inventory.DeletePokemonFromInvById(pokemon.Id);
+                session.Inventory.DeletePokemonFromInvById(pokemon.Id);
                 var bestPokemonOfType = (session.LogicSettings.PrioritizeIvOverCp
-                    ? await session.Inventory.GetHighestPokemonOfTypeByIv(pokemon)
-                    : await session.Inventory.GetHighestPokemonOfTypeByCp(pokemon)) ?? pokemon;
+                    ? session.Inventory.GetHighestPokemonOfTypeByIv(pokemon)
+                    : session.Inventory.GetHighestPokemonOfTypeByCp(pokemon)) ?? pokemon;
 
                 var setting = session.Inventory.GetPokemonSettings()
                     .Result.Single(q => q.PokemonId == pokemon.PokemonId);
-                var family = session.Inventory.GetPokemonFamilies().Result.First(q => q.FamilyId == setting.FamilyId);
+                var family = session.Inventory.GetPokemonFamilies().First(q => q.FamilyId == setting.FamilyId);
 
                 family.Candy_++;
 

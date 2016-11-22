@@ -23,7 +23,7 @@ namespace PoGo.NecroBot.Logic.Tasks
 
         private  static async Task<bool> UpgradeSinglePokemon(ISession session, PokemonData pokemon, List<Candy> pokemonFamilies, List<PokemonSettings> pokemonSettings) {
             if (PokemonInfo.GetLevel(pokemon) >=
-                                 session.Inventory.GetPlayerStats().Result.FirstOrDefault().Level + 1) return false;
+                                 session.Inventory.GetPlayerStats().FirstOrDefault().Level + 1) return false;
 
             var settings = pokemonSettings.Single(x => x.PokemonId == pokemon.PokemonId);
             var familyCandy = pokemonFamilies.Single(x => settings.FamilyId == x.FamilyId);
@@ -35,8 +35,8 @@ namespace PoGo.NecroBot.Logic.Tasks
             if (upgradeResult.UpgradedPokemon != null)
             {
                 var bestPokemonOfType = (session.LogicSettings.PrioritizeIvOverCp
-                    ? await session.Inventory.GetHighestPokemonOfTypeByIv(upgradeResult.UpgradedPokemon)
-                    : await session.Inventory.GetHighestPokemonOfTypeByCp(upgradeResult.UpgradedPokemon)) ?? upgradeResult.UpgradedPokemon;
+                    ? session.Inventory.GetHighestPokemonOfTypeByIv(upgradeResult.UpgradedPokemon)
+                    : session.Inventory.GetHighestPokemonOfTypeByCp(upgradeResult.UpgradedPokemon)) ?? upgradeResult.UpgradedPokemon;
 
                 if (upgradeResult.Result.ToString().ToLower().Contains("success"))
                 {
@@ -58,11 +58,11 @@ namespace PoGo.NecroBot.Logic.Tasks
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            await session.Inventory.RefreshCachedInventory();
+            // await session.Inventory.RefreshCachedInventory();
 
             if (session.Inventory.GetStarDust() <= session.LogicSettings.GetMinStarDustForLevelUp)
                 return;
-            upgradablePokemon = await session.Inventory.GetPokemonToUpgrade();
+            upgradablePokemon = session.Inventory.GetPokemonToUpgrade();
                       
             if (upgradablePokemon.Count() == 0)
                 return;
@@ -70,7 +70,7 @@ namespace PoGo.NecroBot.Logic.Tasks
             var myPokemonSettings = await session.Inventory.GetPokemonSettings();
             var pokemonSettings = myPokemonSettings.ToList();
 
-            var myPokemonFamilies = await session.Inventory.GetPokemonFamilies();
+            var myPokemonFamilies = session.Inventory.GetPokemonFamilies();
             var pokemonFamilies = myPokemonFamilies.ToList();
 
             var upgradedNumber = 0;

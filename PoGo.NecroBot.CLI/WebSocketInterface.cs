@@ -111,10 +111,10 @@ namespace PoGo.NecroBot.CLI
                     await PokemonListTask.Execute(_session);
                     break;
                 case "EggsList":
-                    await EggsListTask.Execute(_session);
+                    EggsListTask.Execute(_session);
                     break;
                 case "InventoryList":
-                    await InventoryListTask.Execute(_session);
+                    InventoryListTask.Execute(_session);
                     break;
                 case "PokemonSnipeList":
                     await HumanWalkSnipeTask.ExecuteFetchData(_session);

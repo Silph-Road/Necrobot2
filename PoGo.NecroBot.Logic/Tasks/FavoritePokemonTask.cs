@@ -18,9 +18,9 @@ namespace PoGo.NecroBot.Logic.Tasks
         public static async Task Execute(ISession session, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await session.Inventory.RefreshCachedInventory();
+            // await session.Inventory.RefreshCachedInventory();
 
-            var pokemons = await session.Inventory.GetPokemons();
+            var pokemons = session.Inventory.GetPokemons();
 
             foreach (var pokemon in pokemons)
             {
@@ -47,7 +47,7 @@ namespace PoGo.NecroBot.Logic.Tasks
             {
                 if (!await blocker.WaitToRun()) return;
 
-                var all = await session.Inventory.GetPokemons();
+                var all = session.Inventory.GetPokemons();
                 var pokemon = all.FirstOrDefault(p => p.Id == pokemonId);
                 if (pokemon != null)
                 {

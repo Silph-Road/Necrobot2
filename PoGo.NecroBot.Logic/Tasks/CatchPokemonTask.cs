@@ -162,7 +162,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                 else return true; // No success to work with, exit
 
                 // Check for pokeballs before proceeding
-                var pokeball = await GetBestBall(session, encounteredPokemon, probability);
+                var pokeball = GetBestBall(session, encounteredPokemon, probability);
                 if (pokeball == ItemId.ItemUnknown)
                 {
                     Logger.Write(session.Translation.GetTranslation(TranslationString.ZeroPokeballInv));
@@ -241,7 +241,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                         attemptCounter > session.LogicSettings.MaxPokeballsPerPokemon))
                         break;
 
-                    pokeball = await GetBestBall(session, encounteredPokemon, probability);
+                    pokeball = GetBestBall(session, encounteredPokemon, probability);
                     if (pokeball == ItemId.ItemUnknown)
                     {
                         session.EventDispatcher.Send(new NoPokeballEvent
@@ -372,7 +372,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                         evt.UniqueId = caughtPokemonResponse.CapturedPokemonId;
 
                         var pokemonSettings = await session.Inventory.GetPokemonSettings();
-                        var pokemonFamilies = await session.Inventory.GetPokemonFamilies();
+                        var pokemonFamilies = session.Inventory.GetPokemonFamilies();
 
                         var setting =
                             pokemonSettings.FirstOrDefault(q => pokemon != null && q.PokemonId == pokemon.PokemonId);
@@ -422,9 +422,9 @@ namespace PoGo.NecroBot.Logic.Tasks
                     evt.Pokeball = pokeball;
                     evt.Attempt = attemptCounter;
 
-                    await session.Inventory.RefreshCachedInventory();
+                    // await session.Inventory.RefreshCachedInventory();
 
-                    evt.BallAmount = await session.Inventory.GetItemAmountByType(pokeball);
+                    evt.BallAmount = session.Inventory.GetItemAmountByType(pokeball);
                     evt.Rarity = PokemonGradeHelper.GetPokemonGrade(evt.Id).ToString();
 
                     session.EventDispatcher.Send(evt);
@@ -579,15 +579,15 @@ namespace PoGo.NecroBot.Logic.Tasks
             return false;
         }
 
-        public static async Task<ItemId> GetBestBall(ISession session, PokemonData encounteredPokemon, float probability)
+        public static ItemId GetBestBall(ISession session, PokemonData encounteredPokemon, float probability)
         {
             var pokemonCp = encounteredPokemon.Cp;
             var pokemonId = encounteredPokemon.PokemonId;
             var iV = Math.Round(PokemonInfo.CalculatePokemonPerfection(encounteredPokemon), 2);
-            var pokeBallsCount = await session.Inventory.GetItemAmountByType(ItemId.ItemPokeBall);
-            var greatBallsCount = await session.Inventory.GetItemAmountByType(ItemId.ItemGreatBall);
-            var ultraBallsCount = await session.Inventory.GetItemAmountByType(ItemId.ItemUltraBall);
-            var masterBallsCount = await session.Inventory.GetItemAmountByType(ItemId.ItemMasterBall);
+            var pokeBallsCount = session.Inventory.GetItemAmountByType(ItemId.ItemPokeBall);
+            var greatBallsCount = session.Inventory.GetItemAmountByType(ItemId.ItemGreatBall);
+            var ultraBallsCount = session.Inventory.GetItemAmountByType(ItemId.ItemUltraBall);
+            var masterBallsCount = session.Inventory.GetItemAmountByType(ItemId.ItemMasterBall);
 
             if (masterBallsCount > 0 && (
                 (!session.LogicSettings.PokemonToUseMasterball.Any() && (
@@ -620,7 +620,7 @@ namespace PoGo.NecroBot.Logic.Tasks
 
         public static async Task UseBerry(ISession session, ulong encounterId, string spawnPointId, CancellationToken cancellationToken)
         {
-            var inventoryBalls = await session.Inventory.GetItems();
+            var inventoryBalls = session.Inventory.GetItems();
             var berries = inventoryBalls.Where(p => p.ItemId == ItemId.ItemRazzBerry);
             var berry = berries.FirstOrDefault();
 

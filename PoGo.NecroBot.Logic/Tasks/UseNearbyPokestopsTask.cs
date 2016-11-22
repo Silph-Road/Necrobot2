@@ -312,7 +312,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                     if (session.LogicSettings.AutomaticallyLevelUpPokemon)
                         await LevelUpPokemonTask.Execute(session, cancellationToken);
 
-                    await GetPokeDexCount.Execute(session, cancellationToken);
+                    GetPokeDexCount.Execute(session, cancellationToken);
                 }
             }
         }

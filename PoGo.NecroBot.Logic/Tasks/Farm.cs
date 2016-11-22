@@ -47,7 +47,7 @@ namespace PoGo.NecroBot.Logic.Service
                     RenamePokemonTask.Execute(_session, cancellationToken).Wait(cancellationToken);
 
                 RecycleItemsTask.Execute(_session, cancellationToken).Wait(cancellationToken);
-                GetPokeDexCount.Execute(_session, cancellationToken).Wait(cancellationToken);
+                GetPokeDexCount.Execute(_session, cancellationToken);
 
                 if (_session.LogicSettings.UseEggIncubators)
                     UseIncubatorsTask.Execute(_session, cancellationToken).Wait(cancellationToken);

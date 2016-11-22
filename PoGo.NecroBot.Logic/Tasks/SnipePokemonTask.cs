@@ -168,18 +168,18 @@ namespace PoGo.NecroBot.Logic.Tasks
             return Task.Run(() => Start(session, cancellationToken), cancellationToken);
         }
 
-        public static async Task<bool> CheckPokeballsToSnipe(int minPokeballs, ISession session,
+        public static bool CheckPokeballsToSnipe(int minPokeballs, ISession session,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Refresh inventory so that the player stats are fresh
-            await session.Inventory.RefreshCachedInventory();
+            // await session.Inventory.RefreshCachedInventory();
 
-            var pokeBallsCount = await session.Inventory.GetItemAmountByType(ItemId.ItemPokeBall);
-            pokeBallsCount += await session.Inventory.GetItemAmountByType(ItemId.ItemGreatBall);
-            pokeBallsCount += await session.Inventory.GetItemAmountByType(ItemId.ItemUltraBall);
-            pokeBallsCount += await session.Inventory.GetItemAmountByType(ItemId.ItemMasterBall);
+            var pokeBallsCount = session.Inventory.GetItemAmountByType(ItemId.ItemPokeBall);
+            pokeBallsCount += session.Inventory.GetItemAmountByType(ItemId.ItemGreatBall);
+            pokeBallsCount += session.Inventory.GetItemAmountByType(ItemId.ItemUltraBall);
+            pokeBallsCount += session.Inventory.GetItemAmountByType(ItemId.ItemMasterBall);
 
             if (pokeBallsCount >= minPokeballs)
                 return true;
@@ -229,14 +229,14 @@ namespace PoGo.NecroBot.Logic.Tasks
             LocsVisited.RemoveAll(q => DateTime.Now > q.TimeStampAdded.AddMinutes(15));
             SnipeLocations.RemoveAll(x => DateTime.Now > x.TimeStampAdded.AddMinutes(15));
 
-            if (await CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsToSnipe, session, cancellationToken))
+            if (CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsToSnipe, session, cancellationToken))
             {
                 if (session.LogicSettings.PokemonToSnipe != null)
                 {
                     List<PokemonId> pokemonIds;
                     if (session.LogicSettings.SnipePokemonNotInPokedex)
                     {
-                        var pokeDex = await session.Inventory.GetPokeDexItems();
+                        var pokeDex = session.Inventory.GetPokeDexItems();
                         var pokemonOnlyList = session.LogicSettings.PokemonToSnipe.Pokemon;
                         var capturedPokemon =
                             pokeDex.Where(i => i.InventoryItemData.PokedexEntry.TimesCaptured >= 1)
@@ -280,8 +280,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                                 });
 
                                 if (
-                                    !await
-                                        CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
+                                    !CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
                                             cancellationToken))
                                     return;
                                 if (!CheckSnipeConditions(session)) return;
@@ -313,8 +312,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                                 });
 
                                 if (
-                                    !await
-                                        CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
+                                    !CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
                                             cancellationToken))
                                     return;
                                 if (!CheckSnipeConditions(session)) return;
@@ -347,8 +345,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                                 });
 
                                 if (
-                                    !await
-                                        CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
+                                    !CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
                                             cancellationToken))
                                     return;
                                 if (!CheckSnipeConditions(session)) return;
@@ -381,8 +378,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                                 });
 
                                 if (
-                                    !await
-                                        CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
+                                    !CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session,
                                             cancellationToken))
                                     return;
                                 if (!CheckSnipeConditions(session)) return;
@@ -431,8 +427,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                                         continue;
 
                                     if (
-                                        !await
-                                            CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1,
+                                        !CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1,
                                                 session, cancellationToken))
                                         return;
 
@@ -488,9 +483,9 @@ namespace PoGo.NecroBot.Logic.Tasks
                 });
 
                 var mapObjects = session.Client.Map.GetMapObjects().Result;
-                session.AddForts(mapObjects.Item1.MapCells.SelectMany(p => p.Forts).ToList());
+                session.AddForts(mapObjects.MapCells.SelectMany(p => p.Forts).ToList());
                 catchablePokemon =
-                    mapObjects.Item1.MapCells.SelectMany(q => q.CatchablePokemons)
+                    mapObjects.MapCells.SelectMany(q => q.CatchablePokemons)
                         .Where(q => pokemonIds.Contains(q.PokemonId))
                         .OrderByDescending(pokemon => PokemonInfo.CalculateMaxCpMultiplier(pokemon.PokemonId))
                         .ToList();

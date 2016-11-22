@@ -397,7 +397,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                     return;
                 }
 
-                if (!await SnipePokemonTask.CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session, cancellationToken))
+                if (!SnipePokemonTask.CheckPokeballsToSnipe(session.LogicSettings.MinPokeballsWhileSnipe + 1, session, cancellationToken))
                 {
                     session.EventDispatcher.Send(new WarnEvent()
                     {

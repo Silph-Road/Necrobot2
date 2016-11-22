@@ -18,21 +18,21 @@ namespace PoGo.NecroBot.Logic.Tasks
             {
                 if (!await blocker.WaitToRun()) return;
 
-                var all = await session.Inventory.GetPokemons();
+                var all = session.Inventory.GetPokemons();
                 var pokemons = all.OrderBy(x => x.Cp).ThenBy(n => n.StaminaMax);
                 var pokemon = pokemons.FirstOrDefault(p => p.Id == pokemonId);
 
                 if (pokemon == null) return;
 
                 var pokemonSettings = await session.Inventory.GetPokemonSettings();
-                var pokemonFamilies = await session.Inventory.GetPokemonFamilies();
+                var pokemonFamilies = session.Inventory.GetPokemonFamilies();
 
                 await session.Client.Inventory.TransferPokemon(pokemonId);
-                await session.Inventory.DeletePokemonFromInvById(pokemonId);
+                session.Inventory.DeletePokemonFromInvById(pokemonId);
 
                 var bestPokemonOfType = (session.LogicSettings.PrioritizeIvOverCp
-                    ? await session.Inventory.GetHighestPokemonOfTypeByIv(pokemon)
-                    : await session.Inventory.GetHighestPokemonOfTypeByCp(pokemon)) ?? pokemon;
+                    ? session.Inventory.GetHighestPokemonOfTypeByIv(pokemon)
+                    : session.Inventory.GetHighestPokemonOfTypeByCp(pokemon)) ?? pokemon;
 
                 var setting = pokemonSettings.Single(q => q.PokemonId == pokemon.PokemonId);
                 var family = pokemonFamilies.First(q => q.FamilyId == setting.FamilyId);

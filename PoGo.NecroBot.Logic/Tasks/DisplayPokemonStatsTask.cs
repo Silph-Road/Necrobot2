@@ -23,11 +23,11 @@ namespace PoGo.NecroBot.Logic.Tasks
 
         public static async Task Execute(ISession session)
         {
-            var myPokemonFamilies = await session.Inventory.GetPokemonFamilies();
+            var myPokemonFamilies = session.Inventory.GetPokemonFamilies();
             var myPokeSettings = await session.Inventory.GetPokemonSettings();
 
             var highestsPokemonCp =
-                await session.Inventory.GetHighestsCp(session.LogicSettings.AmountOfPokemonToDisplayOnStart);
+                session.Inventory.GetHighestsCp(session.LogicSettings.AmountOfPokemonToDisplayOnStart);
 
             var pokemonPairedWithStatsCp =
                 highestsPokemonCp.Select(
@@ -38,7 +38,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                             PokemonInfo.GetCandy(pokemon, myPokemonFamilies, myPokeSettings))).ToList();
 
             var highestsPokemonPerfect =
-                await session.Inventory.GetHighestsPerfect(session.LogicSettings.AmountOfPokemonToDisplayOnStart);
+                session.Inventory.GetHighestsPerfect(session.LogicSettings.AmountOfPokemonToDisplayOnStart);
 
             var pokemonPairedWithStatsIv =
                 highestsPokemonPerfect.Select(
@@ -63,8 +63,8 @@ namespace PoGo.NecroBot.Logic.Tasks
                 });
 
             var allPokemonInBag = session.LogicSettings.PrioritizeIvOverCp
-                ? await session.Inventory.GetHighestsPerfect(1000)
-                : await session.Inventory.GetHighestsCp(1000);
+                ? session.Inventory.GetHighestsPerfect(1000)
+                : session.Inventory.GetHighestsCp(1000);
             if (session.LogicSettings.DumpPokemonStats)
             {
                 const string dumpFileName = "PokeBagStats";
