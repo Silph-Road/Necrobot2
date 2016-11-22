@@ -4,7 +4,9 @@ const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 const protocol = electron.protocol
+const Menu = electron.Menu;
 
+const config = require('electron-json-config');
 const path = require('path')
 const url = require('url')
 
@@ -12,6 +14,7 @@ const url = require('url')
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 let captchaWindow
+let optionsWindow
 
 function showCaptchaWindow(captchaUrl) {
   captchaWindow = new BrowserWindow({
@@ -28,6 +31,29 @@ function showCaptchaWindow(captchaUrl) {
   captchaWindow.loadURL(captchaUrl)
   captchaWindow.once('ready-to-show', () => {
 	captchaWindow.show()
+  })
+}
+
+function showOptionsWindow() {
+  optionsWindow = new BrowserWindow({
+    width: 600, 
+	height: 500, 
+	show: false,
+	webPreferences: {
+      nodeIntegration: true,
+      webSecurity: true,
+      preload: path.resolve(path.join(__dirname, 'scripts/preload.js'))
+    }
+  })
+  
+  optionsWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'options.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
+  
+  optionsWindow.once('ready-to-show', () => {
+	optionsWindow.show()
   })
 }
 
@@ -76,6 +102,15 @@ function createWindow () {
 	  console.error('Failed to register unity protocol')
 	}
   })
+  
+  initializeConfig();
+}
+
+function initializeConfig() {
+    console.log("Config file: " + config.file())
+	if (config.get("ConsoleConfigPath") == null) {
+	  config.set("ConsoleConfigPath", path.join(path.join(__dirname, '..'), 'Config'))
+	}
 }
 
 // This method will be called when Electron has finished
@@ -99,6 +134,33 @@ app.on('activate', function () {
     createWindow()
   }
 })
+
+const menu = Menu.buildFromTemplate([
+  {
+    label: 'File',
+    submenu: [
+      {
+        label: 'Options',
+        click: function() {
+          showOptionsWindow();
+        }
+      },
+	  {
+			type: 'separator'
+	  },
+	  {
+		label: 'Quit',
+		accelerator: 'CmdOrCtrl+Q',
+		click: () => {
+			app.quit();
+		}
+	  }
+    ]
+  }
+]);
+
+Menu.setApplicationMenu(menu);
+
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

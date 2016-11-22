@@ -29,5 +29,8 @@
     "win": {
       "iconUrl": "http://i.imgur.com/PD5Nx4d.png"
     }
+  },
+  "dependencies": {
+    "electron-json-config": "^1.4.0"
   }
 }
