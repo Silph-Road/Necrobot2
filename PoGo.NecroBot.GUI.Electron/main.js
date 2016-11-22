@@ -21,6 +21,8 @@ function showCaptchaWindow(captchaUrl) {
     width: 600, 
 	height: 500, 
 	show: false,
+	show: false,
+	parent: mainWindow, 
 	webPreferences: {
       nodeIntegration: true,
       webSecurity: true,
@@ -39,6 +41,8 @@ function showOptionsWindow() {
     width: 600, 
 	height: 500, 
 	show: false,
+	parent: mainWindow, 
+	modal: true,
 	webPreferences: {
       nodeIntegration: true,
       webSecurity: true,
