@@ -91,7 +91,7 @@ namespace PoGo.NecroBot.Logic
         
         private RepeatedField<InventoryItem> GetCachedInventory()
         {
-            return _client.Inventory.GetInventory();
+            return _client.Inventory.InventoryItems;
         }
 
         public async Task<IEnumerable<PokemonData>> GetDuplicatePokemonToTransfer(
@@ -377,7 +377,7 @@ namespace PoGo.NecroBot.Logic
         public List<InventoryItem> GetPokeDexItems()
         {
             List<InventoryItem> PokeDex = new List<InventoryItem>();
-            var inventory = _client.Inventory.GetInventory();
+            var inventory = _client.Inventory.InventoryItems;
 
             return (from items in inventory
                     where items.InventoryItemData?.PokedexEntry != null
