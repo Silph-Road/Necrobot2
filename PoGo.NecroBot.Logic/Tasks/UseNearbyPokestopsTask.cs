@@ -317,6 +317,8 @@ namespace PoGo.NecroBot.Logic.Tasks
             }
         }
 
+        private static int softbanCount = 0;
+
         private static async Task FarmPokestop(ISession session, FortData pokeStop, FortDetailsResponse fortInfo, CancellationToken cancellationToken, bool doNotRetry = false)
         {
             // If the cooldown is in the future than don't farm the pokestop.
@@ -340,7 +342,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                 fortSearch =
                     await session.Client.Fort.SearchFort(pokeStop.Id, pokeStop.Latitude, pokeStop.Longitude);
                 if (fortSearch.ExperienceAwarded > 0 && timesZeroXPawarded > 0) timesZeroXPawarded = 0;
-                if (fortSearch.ExperienceAwarded == 0)
+                if (fortSearch.ExperienceAwarded == 0 && fortSearch.Result != FortSearchResponse.Types.Result.InventoryFull)
                 {
                     timesZeroXPawarded++;
 
@@ -396,7 +398,10 @@ namespace PoGo.NecroBot.Logic.Tasks
                         InventoryFull = fortSearch.Result == FortSearchResponse.Types.Result.InventoryFull
                     });
                     if (fortSearch.Result == FortSearchResponse.Types.Result.InventoryFull)
+                    {
+                        await RecycleItemsTask.Execute(session, cancellationToken);
                         _storeRi = 1;
+                    }
 
                     if (session.LogicSettings.UsePokeStopLimit)
                     {
@@ -413,15 +418,28 @@ namespace PoGo.NecroBot.Logic.Tasks
             {
                 if (fortTry >= retryNumber - zeroCheck)
                 {
-                    session.CancellationTokenSource.Cancel();
-                    
-                    //Activate switcher by pokestop
-                    throw new ActiveSwitchByRuleException()
+                    softbanCount++;
+
+                    //only check if PokestopSoftbanCount > 0
+                    if (MultipleBotConfig.IsMultiBotActive(session.LogicSettings) &&
+                        session.LogicSettings.MultipleBotConfig.PokestopSoftbanCount > 0 &&
+                        session.LogicSettings.MultipleBotConfig.PokestopSoftbanCount <= softbanCount)
                     {
-                        MatchedRule = SwitchRules.PokestopSoftban,
-                        ReachedValue = 1
-                    };
+                        softbanCount = 0;
+                        session.CancellationTokenSource.Cancel();
+
+                        //Activate switcher by pokestop
+                        throw new ActiveSwitchByRuleException()
+                        {
+                            MatchedRule = SwitchRules.PokestopSoftban,
+                            ReachedValue = softbanCount
+                        };
+                    }
                 }
+            }
+            else
+            {
+                softbanCount = 0; //reset softban count
             }
 
             if (session.LogicSettings.RandomlyPauseAtStops && !doNotRetry)

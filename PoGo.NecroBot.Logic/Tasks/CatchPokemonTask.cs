@@ -1,6 +1,7 @@
 ﻿#region using directives
 
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,7 +92,17 @@ namespace PoGo.NecroBot.Logic.Tasks
 
         private static int CatchFleeContinuouslyCount = 0;
 
-        public static async Task Execute(ISession session,
+        /// <summary>
+        /// Because this function sometime being called inside loop, return true it mean we don't want break look, false it mean not need to call this , break a loop from caller function 
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="encounter"></param>
+        /// <param name="pokemon"></param>
+        /// <param name="currentFortData"></param>
+        /// <param name="sessionAllowTransfer"></param>
+        /// <returns></returns>
+        public static async Task<bool> Execute(ISession session,
                                         CancellationToken cancellationToken,
                                         dynamic encounter,
                                         MapPokemon pokemon,
@@ -99,14 +110,14 @@ namespace PoGo.NecroBot.Logic.Tasks
                                         bool sessionAllowTransfer)
         {
             // If the encounter is null nothing will work below, so exit now
-            if (encounter == null) return;
+            if (encounter == null) return true;
             // Exit if user defined max limits reached
             if (CatchThresholdExceeds(session, cancellationToken))
-                return;
+                return false;
 
             using (var block = new BlockableScope(session, Model.BotActions.Catch))
             {
-                if (!await block.WaitToRun()) return;
+                if (!await block.WaitToRun()) return true;
 
                 AmountOfBerries = 0;
 
@@ -148,14 +159,14 @@ namespace PoGo.NecroBot.Logic.Tasks
                     _spawnPointId = currentFortData.Id;
                     _encounterId = currentFortData.LureInfo.EncounterId;
                 }
-                else return; // No success to work with, exit
+                else return true; // No success to work with, exit
 
                 // Check for pokeballs before proceeding
                 var pokeball = await GetBestBall(session, encounteredPokemon, probability);
                 if (pokeball == ItemId.ItemUnknown)
                 {
                     Logger.Write(session.Translation.GetTranslation(TranslationString.ZeroPokeballInv));
-                    return;
+                    return false;
                 }
 
                 // Calculate CP and IV
@@ -173,6 +184,22 @@ namespace PoGo.NecroBot.Logic.Tasks
 
                 var distance = LocationUtils.CalculateDistanceInMeters(session.Client.CurrentLatitude,
                     session.Client.CurrentLongitude, latitude, longitude);
+                if (session.LogicSettings.ActivateMSniper)
+                {
+                    var newdata = new MSniperServiceTask.EncounterInfo();
+                    newdata.EncounterId = _encounterId.ToString();
+                    newdata.Iv = Math.Round(pokemonIv, 2);
+                    newdata.Latitude = latitude.ToString("G17", CultureInfo.InvariantCulture);
+                    newdata.Longitude = longitude.ToString("G17", CultureInfo.InvariantCulture);
+                    newdata.PokemonId = (int)(encounteredPokemon?.PokemonId ?? 0);
+                    newdata.PokemonName = encounteredPokemon?.PokemonId.ToString();
+                    newdata.SpawnPointId = _spawnPointId;
+                    newdata.Move1 = PokemonInfo.GetPokemonMove1(encounteredPokemon).ToString();
+                    newdata.Move2 = PokemonInfo.GetPokemonMove2(encounteredPokemon).ToString();
+                    newdata.Expiration = unixTimeStamp;
+
+                    session.EventDispatcher.Send(newdata);
+                }
 
                 DateTime expiredDate = new DateTime(1970, 1, 1, 0, 0, 0).AddMilliseconds(Convert.ToDouble(unixTimeStamp));
                 var encounterEV = new EncounteredEvent()
@@ -200,7 +227,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                     });
                     session.Cache.Add(_encounterId.ToString(), encounteredPokemon, expiredDate);
                     Logger.Write($"Filter catch not met. {encounteredPokemon.PokemonId.ToString()} IV {pokemonIv} lv {lv} {pokemonCp} move1 {PokemonInfo.GetPokemonMove1(encounteredPokemon)} move 2 {PokemonInfo.GetPokemonMove2(encounteredPokemon)}");
-                    return;
+                    return true;
                 };
 
                 CatchPokemonResponse caughtPokemonResponse = null;
@@ -222,7 +249,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                             Id = encounter is EncounterResponse ? pokemon.PokemonId : encounter?.PokemonData.PokemonId,
                             Cp = encounteredPokemon.Cp
                         });
-                        return;
+                        return false;
                     }
 
                     // Determine whether to use berries or not
@@ -328,10 +355,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                     };
 
                     lastThrow = caughtPokemonResponse.Status;       // sets lastThrow status
-
-                    // Only use EncounterResponse for MSnipe (no Incense or Lures)
-                    if (session.LogicSettings.ActivateMSniper && encounter is EncounterResponse)
-                        MSniperServiceTask.AddToList(session, encounter);
+                    
 
                     if (caughtPokemonResponse.Status == CatchPokemonResponse.Types.CatchStatus.CatchSuccess)
                     {
@@ -452,6 +476,7 @@ namespace PoGo.NecroBot.Logic.Tasks
                         await TransferDuplicatePokemonTask.Execute(session, cancellationToken);
                 }
             }
+            return true;
         }
 
         private static void ExecuteSwitcher(ISession session, EncounteredEvent encounterEV)

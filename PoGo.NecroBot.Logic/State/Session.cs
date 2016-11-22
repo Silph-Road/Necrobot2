@@ -16,6 +16,7 @@ using PoGo.NecroBot.Logic.Model;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.Caching;
+using PoGo.NecroBot.Logic.Logging;
 
 #endregion
 
@@ -36,7 +37,7 @@ namespace PoGo.NecroBot.Logic.State
         IElevationService ElevationService { get; set; }
         List<FortData> Forts { get; set; }
         List<FortData> VisibleForts { get; set; }
-        void ResetSessionToWithNextBot(AuthConfig authConfig=null,double lat = 0, double lng = 0, double att = 0);
+        void ResetSessionToWithNextBot(AuthConfig authConfig = null, double lat = 0, double lng = 0, double att = 0);
         void AddForts(List<FortData> mapObjects);
         void AddVisibleForts(List<FortData> mapObjects);
         Task<bool> WaitUntilActionAccept(BotActions action, int timeout = 30000);
@@ -45,6 +46,7 @@ namespace PoGo.NecroBot.Logic.State
         MemoryCache Cache { get; set; }
         List<AuthConfig> Accounts { get; }
         DateTime LoggedTime { get; set; }
+        DateTime CatchBlockTime { get; set; }
 
         void BlockCurrentBot(int expired = 15);
     }
@@ -54,6 +56,7 @@ namespace PoGo.NecroBot.Logic.State
     {
         public Session(ISettings settings, ILogicSettings logicSettings, IElevationService elevationService) : this(settings, logicSettings, elevationService, Common.Translation.Load(logicSettings))
         {
+            LoggedTime = DateTime.Now;
         }
         public DateTime LoggedTime { get; set; }
         private List<AuthConfig> accounts;
@@ -69,7 +72,7 @@ namespace PoGo.NecroBot.Logic.State
             this.LogicSettings = logicSettings;
 
             this.ElevationService = elevationService;
-            
+
             this.Settings = settings;
 
             this.Translation = translation;
@@ -116,7 +119,7 @@ namespace PoGo.NecroBot.Logic.State
         public IElevationService ElevationService { get; set; }
         public CancellationTokenSource CancellationTokenSource { get; set; }
         public MemoryCache Cache { get; set; }
-	public List<AuthConfig> Accounts
+        public List<AuthConfig> Accounts
         {
             get
             {
@@ -124,6 +127,7 @@ namespace PoGo.NecroBot.Logic.State
             }
         }
 
+        public DateTime CatchBlockTime { get; set; }
         private List<BotActions> botActions = new List<BotActions>();
         public void Reset(ISettings settings, ILogicSettings logicSettings)
         {
@@ -134,15 +138,21 @@ namespace PoGo.NecroBot.Logic.State
             Navigation.WalkStrategy.UpdatePositionEvent +=
                 (lat, lng) => this.EventDispatcher.Send(new UpdatePositionEvent { Latitude = lat, Longitude = lng });
         }
-
-        public void ResetSessionToWithNextBot(AuthConfig bot = null, double lat=0, double lng=0, double att=0)
+        //TODO : Need add BotManager to manage all feature related to multibot, 
+        public void ResetSessionToWithNextBot(AuthConfig bot = null, double lat = 0, double lng = 0, double att = 0)
         {
+            this.CatchBlockTime = DateTime.Now; //remove any block
+            
             var currentAccount = this.accounts.FirstOrDefault(x => (x.AuthType == PokemonGo.RocketAPI.Enums.AuthType.Ptc && x.PtcUsername == this.Settings.PtcUsername) ||
                                         (x.AuthType == PokemonGo.RocketAPI.Enums.AuthType.Google && x.GoogleUsername == this.Settings.GoogleUsername));
-            currentAccount.RuntimeTotal += (DateTime.Now - LoggedTime).TotalMinutes;
-            this.accounts = this.accounts.OrderByDescending(p=>p.RuntimeTotal).ToList();
+            if (LoggedTime != DateTime.MinValue)
+            {
+                currentAccount.RuntimeTotal += (DateTime.Now - LoggedTime).TotalMinutes;
+            }
 
-            var nextBot = bot != null? bot : this.accounts.LastOrDefault(p=>p != currentAccount && p.ReleaseBlockTime< DateTime.Now);
+            this.accounts = this.accounts.OrderByDescending(p => p.RuntimeTotal).ToList();
+
+            var nextBot = bot != null ? bot : this.accounts.LastOrDefault(p => p != currentAccount && p.ReleaseBlockTime < DateTime.Now);
             if (nextBot != null)
             {
                 this.Settings.AuthType = nextBot.AuthType;
@@ -157,8 +167,17 @@ namespace PoGo.NecroBot.Logic.State
                 this.Reset(this.Settings, this.LogicSettings);
                 CancellationTokenSource.Cancel();
                 this.CancellationTokenSource = new CancellationTokenSource();
+                
+                this.EventDispatcher.Send(new BotSwitchedEvent() {
+                });
 
-                this.EventDispatcher.Send(new BotSwitchedEvent() { });
+                if(this.LogicSettings.MultipleBotConfig.DisplayList)
+                {
+                    foreach (var item in this.accounts)
+                    {
+                        Logger.Write($"{item.PtcUsername}{item.GoogleUsername} \tRuntime : {item.RuntimeTotal:0.00} min ");
+                    }
+                }
             }
 
         }

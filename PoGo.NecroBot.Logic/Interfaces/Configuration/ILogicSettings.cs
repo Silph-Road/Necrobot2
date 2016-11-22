@@ -14,6 +14,8 @@ namespace PoGo.NecroBot.Logic.Interfaces.Configuration
     {
         bool UseWebsocket { get; }
         bool CatchPokemon { get; }
+        int OutOfBallCatchBlockTime { get; }
+        int PokeballsToKeepForSnipe { get; }            
         int CatchPokemonLimit { get; }
         int CatchPokemonLimitMinutes { get; }
         int PokeStopLimit { get; }
@@ -223,13 +225,14 @@ namespace PoGo.NecroBot.Logic.Interfaces.Configuration
         int GymVisitTimeout { get; }
         int GymNumberOfTopPokemonToBeExcluded { get; }
 
+        string DataSharingIdentifiation { get; }
         bool DataSharingEnable { get; }
         string DataSharingDataUrl { get; }
-
         bool AllowAutoSnipe { get; }
         MultipleBotConfig MultipleBotConfig { get; }
         int GymCollectRewardAfter { get; }
         List<AuthConfig> Bots { get; }
         bool AllowMultipleBot { get; }
+        
     }
 }
